@@ -123,7 +123,7 @@ defecto son solo para desarrollo local.
 ├── Procfile                       # Comando gunicorn que ejecuta la plataforma
 ├── requirements.txt               # Dependencias con versiones fijas
 ├── .ebextensions/
-│   ├── 01_app.config              # WSGIPath, variables, health check, enhanced health
+│   ├── 01_app.config              # WSGIPath, variables, health check /health, enhanced health
 │   └── 02_autoscaling.config      # ASG min 3 / max 6, tipo de instancia, triggers
 ├── .env.example                   # Plantilla de variables de entorno
 ├── docs/
@@ -171,22 +171,25 @@ El esquema se crea automáticamente al arrancar (`db.create_all()`), controlado 
 | Variable | Obligatoria | Default | Descripción |
 |---|---|---|---|
 | `APP_ENV` | No | `production` | `development` \| `production` \| `testing` |
-| `DATABASE_URL` | No | – | Cadena completa; tiene prioridad sobre las piezas |
-| `DB_ENGINE` | No | `postgresql` | Motor |
-| `DB_HOST` | Sí (prod) | – | Endpoint de RDS |
-| `DB_PORT` | No | `5432` | Puerto |
-| `DB_NAME` | Sí (prod) | – | Nombre de la base |
-| `DB_USER` | Sí (prod) | – | Usuario maestro |
-| `DB_PASSWORD` | Sí (prod) | – | Contraseña |
 | `STATIC_TOKEN` | Sí (prod) | valor de desarrollo | Bearer Token estático |
 | `JWT_SECRET_KEY` | Sí (prod) | `SECRET_KEY` | Llave de firma de JWT |
 | `JWT_ACCESS_TOKEN_EXPIRES_MINUTES` | No | `60` | Vigencia del JWT |
 | `AUTO_CREATE_TABLES` | No | `true` | Crear tablas al arrancar |
 
-También se reconocen `RDS_HOSTNAME`, `RDS_PORT`, `RDS_DB_NAME`, `RDS_USERNAME` y `RDS_PASSWORD`,
-las variables que Elastic Beanstalk inyecta cuando se adjunta una base de datos al ambiente.
+### Conexión a la base de datos
 
-Sin `DB_HOST`/`DATABASE_URL` la aplicación cae a SQLite local, útil para desarrollo.
+`src/config.py` resuelve la conexión en este orden de precedencia:
+
+1. **`DATABASE_URL`** — cadena completa. Útil en local o con proveedores que la inyectan.
+2. **`DB_*`** — `DB_ENGINE` (default `postgresql`), `DB_HOST`, `DB_PORT` (default `5432`),
+   `DB_NAME`, `DB_USER`, `DB_PASSWORD`. Es lo que se usa con una **instancia RDS independiente**.
+3. **`RDS_*`** — `RDS_HOSTNAME`, `RDS_PORT`, `RDS_DB_NAME`, `RDS_USERNAME`, `RDS_PASSWORD`. Son las
+   variables que **Elastic Beanstalk inyecta automáticamente** cuando la base de datos está acoplada
+   al ambiente. En ese modo no hay que configurar nada: la app las lee sola.
+4. **SQLite local** si no hay ninguna de las anteriores, útil para desarrollo.
+
+> Con base acoplada al ambiente, **no** defina `DB_HOST`/`DB_NAME`/`DB_USER`/`DB_PASSWORD`: tienen
+> mayor precedencia y sobrescribirían a las `RDS_*`.
 
 ---
 

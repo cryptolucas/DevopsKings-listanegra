@@ -9,7 +9,7 @@ sección indica qué captura de pantalla tomar para el documento `Proyecto 1 ent
 Internet → Application Load Balancer → Auto Scaling Group (3–6 × EC2 t3.micro)
                                             │  gunicorn + Flask (/var/app/current)
                                             ▼
-                                       RDS PostgreSQL (privada, puerto 5432)
+                                       RDS PostgreSQL (puerto 5432)
 ```
 
 ---
@@ -35,77 +35,38 @@ Internet → Application Load Balancer → Auto Scaling Group (3–6 × EC2 t3.m
 
 ---
 
-## Fase 1 – Crear la base de datos en RDS
+## Fase 1 – Decidir cómo se crea la base de datos
 
-Se crea **primero** la base de datos, porque Elastic Beanstalk necesita su endpoint.
+El enunciado solo pide persistir en un servicio de bases de datos relacionales y *recomienda* RDS.
+No exige que la base sea independiente, así que hay dos caminos válidos:
 
-> Cree RDS como recurso independiente (no con la opción "Database" dentro de Elastic Beanstalk).
-> Si la base vive dentro del ambiente de EB, se elimina junto con el ambiente y se pierden los datos
-> entre despliegues de prueba.
+| | **Opción A – Base acoplada al ambiente** *(recomendada para esta entrega)* | **Opción B – RDS independiente** |
+|---|---|---|
+| Cómo se crea | En la misma pantalla de creación del ambiente de Elastic Beanstalk | Como instancia aparte en la consola de RDS |
+| Credenciales en la app | Elastic Beanstalk inyecta `RDS_HOSTNAME`, `RDS_PORT`, `RDS_DB_NAME`, `RDS_USERNAME`, `RDS_PASSWORD`. **El código ya las lee**: no hay que configurar nada | Hay que definir a mano `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` |
+| Security group | Elastic Beanstalk lo configura solo | Hay que crear la regla de entrada 5432 manualmente |
+| Nombre de la base | Siempre `ebdb` (no se puede elegir) | El que usted defina |
+| Ciclo de vida | Atada al ambiente: al terminarlo se aplica la *deletion policy* | Independiente del ambiente |
+| Varios ambientes / blue-green | No | Sí |
 
-### 1.1 Security group para la base de datos
+Las 4 estrategias de despliegue funcionan igual en ambos casos: la base está asociada al
+**ambiente**, no a las instancias, así que sobrevive intacta incluso en *immutable* y
+*traffic-splitting*.
 
-1. Consola → **EC2** → *Network & Security* → **Security Groups** → **Create security group**.
-2. Datos:
-   - **Name:** `sg-listanegra-rds`
-   - **Description:** `Acceso PostgreSQL para el microservicio de lista negra`
-   - **VPC:** la VPC por defecto (la misma que usará Elastic Beanstalk)
-3. **Inbound rules:** déjelo vacío por ahora. En la Fase 3 se agrega la regla que permite el acceso
-   desde las instancias EC2 de Elastic Beanstalk.
-4. **Create security group** y anote el ID (`sg-xxxxxxxx`).
+**Recomendación para esta entrega: Opción A.** Es un ambiente único, de vida corta, y se ahorra toda
+la configuración de red. AWS misma sugiere empezar acoplado y desacoplar solo cuando se necesita
+conectar varios ambientes a la misma base o hacer blue/green
+([Adding a database to your Elastic Beanstalk environment](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.managing.db.html)).
 
-### 1.2 Crear la instancia PostgreSQL
+> ⚠️ Lo único que hay que cuidar en la Opción A: ponga **Database deletion policy = `Retain`**. Con
+> `Delete` (el valor por defecto), terminar el ambiente borra la base y pierde los datos.
 
-1. Consola → **RDS** → **Databases** → **Create database**.
-2. **Choose a database creation method:** `Standard create`.
-3. **Engine options:** `PostgreSQL`. Versión 15.x o 16.x.
-4. **Templates:** `Free tier` (o `Dev/Test` si la cuenta de AWS Academy no ofrece free tier).
-5. **Settings:**
-   - **DB instance identifier:** `listanegra-db`
-   - **Master username:** `postgres`
-   - **Credentials management:** `Self managed`
-   - **Master password:** una contraseña fuerte. **Guárdela**, no se puede volver a ver.
-6. **Instance configuration:** `db.t3.micro` (o `db.t4g.micro`).
-7. **Storage:** 20 GB gp3. **Desactive** *Enable storage autoscaling* para no generar costos.
-8. **Connectivity:**
-   - **Compute resource:** `Don't connect to an EC2 compute resource`
-   - **VPC:** la VPC por defecto
-   - **Public access:** `No` ← recomendado. La API accede desde dentro de la VPC.
-   - **VPC security group:** `Choose existing` → seleccione `sg-listanegra-rds` y **quite** el grupo
-     `default`.
-   - **Availability Zone:** cualquiera (anótela).
-9. **Database authentication:** `Password authentication`.
-10. **Monitoring:** desactive *Performance Insights* (ahorra costo).
-11. **Additional configuration** ← **paso crítico**:
-    - **Initial database name:** `blacklistdb`
-      Si deja este campo vacío, RDS crea el servidor pero **ninguna base de datos**, y la aplicación
-      fallará con `database "blacklistdb" does not exist`.
-    - **Backup retention:** 1 día (o 0 para la práctica).
-    - Desactive *Enable auto minor version upgrade* si quiere evitar reinicios inesperados.
-12. **Create database**. Tarda entre 5 y 10 minutos en pasar a `Available`.
-
-### 1.3 Anotar el endpoint
-
-Cuando el estado sea `Available`, abra `listanegra-db` → pestaña **Connectivity & security** y copie:
-
-- **Endpoint:** `listanegra-db.xxxxxxxx.us-east-1.rds.amazonaws.com`
-- **Port:** `5432`
-
-📸 *Capturas para el punto 1.a del documento ("Configuración de RDS"): pantalla de creación con el
-engine y la clase de instancia, la sección Connectivity con el security group, el campo
-**Initial database name** = `blacklistdb`, y la vista final de la base en estado `Available` con su
-endpoint.*
-
-> **Si Public access = No**, no podrá conectarse con pgAdmin/DBeaver desde su equipo. Es lo correcto
-> en términos de seguridad: la base solo es alcanzable desde la VPC. Para el video de sustentación,
-> demuestre la persistencia a través de la API (`POST` y luego `GET`) o con `psql` desde una de las
-> instancias EC2 por **Session Manager**.
+Si prefiere la Opción B, siga el **[Anexo A](#anexo-a--opción-b-rds-independiente)** y luego vuelva
+a la Fase 2.
 
 ---
 
-## Fase 2 – Crear la aplicación en Elastic Beanstalk
-
-### 2.1 Empaquetar el código
+## Fase 2 – Empaquetar el código
 
 El ZIP debe contener los archivos **en su raíz**, no dentro de una carpeta.
 
@@ -135,7 +96,11 @@ Verifique el contenido: al abrir el ZIP debe ver `application.py`, `Procfile`, `
 > como arriba. Si la carpeta no viaja en el ZIP, el health check y el Auto Scaling quedarán sin
 > configurar.
 
-### 2.2 Crear la aplicación y el ambiente
+---
+
+## Fase 3 – Crear la aplicación y el ambiente en Elastic Beanstalk
+
+### 3.1 Datos iniciales
 
 1. Consola → **Elastic Beanstalk** → **Create application**.
 2. **Environment tier:** `Web server environment`.
@@ -146,12 +111,12 @@ Verifique el contenido: al abrir el ZIP debe ver `application.py`, `Procfile`, `
    - **Platform branch:** `Python 3.11 running on 64bit Amazon Linux 2023`
      (3.12 o 3.13 también funcionan; evite ramas marcadas como *retired*)
    - **Platform version:** la recomendada
-6. **Application code:** `Upload your code` → *Local file* → el ZIP de 2.1.
+6. **Application code:** `Upload your code` → *Local file* → el ZIP de la Fase 2.
    **Version label:** `v1-inicial`.
 7. **Presets:** `Custom configuration` (necesario para pedir varias instancias).
 8. **Next**.
 
-### 2.3 Service access (paso donde más falla AWS Academy)
+### 3.2 Service access (paso donde más falla AWS Academy)
 
 | Campo | AWS Academy / Learner Lab | Cuenta propia |
 |---|---|---|
@@ -163,15 +128,43 @@ En AWS Academy **no** tiene permisos para crear roles IAM. Si ve un error tipo
 `not authorized to perform: iam:CreateRole`, significa que eligió "create new role": vuelva y
 seleccione los roles existentes del laboratorio.
 
-### 2.4 Networking, database and tags
+### 3.3 Networking, database and tags ← aquí se crea la base de datos
 
-- **VPC:** la misma VPC de la base de datos (la default).
+**Networking**
+
+- **VPC:** la VPC por defecto.
 - **Instance subnets:** marque **al menos dos** subredes en zonas de disponibilidad distintas
   (requisito del balanceador y base para alta disponibilidad).
 - **Public IP address:** activado (`Activated`) para las instancias.
-- **Database:** **déjelo vacío**. Ya creamos RDS por separado en la Fase 1.
 
-### 2.5 Instance traffic and scaling
+**Database** (Opción A). Active la sección y configure:
+
+| Campo | Valor |
+|---|---|
+| **Snapshot** | `None` |
+| **Engine** | `postgres` |
+| **Engine version** | 15.x o 16.x |
+| **Instance class** | `db.t3.micro` |
+| **Storage** | 20 GB |
+| **Username** | `postgres` |
+| **Password** | 8–16 caracteres ASCII imprimibles, **sin** `/`, `\` ni `@` |
+| **Availability** | `Low (one AZ)` |
+| **Database deletion policy** | **`Retain`** ← no lo deje en `Delete` |
+
+Guarde la contraseña: no se puede volver a consultar en la consola.
+
+La base se llamará `ebdb` (Elastic Beanstalk no permite elegir el nombre) y la aplicación la
+recibirá por la variable `RDS_DB_NAME`. **No agregue las variables `DB_HOST`, `DB_NAME`, `DB_USER` ni
+`DB_PASSWORD`**: si lo hace, sobrescriben a las `RDS_*` y la app apuntaría a otro lugar.
+
+> Si el laboratorio de AWS Academy rechaza la creación de la base desde Elastic Beanstalk por
+> permisos (`rds:CreateDBInstance`), use el **[Anexo A](#anexo-a--opción-b-rds-independiente)**.
+
+📸 *Capturas para el punto 1.a del documento ("Configuración de RDS"): este panel **Database** con el
+engine, la clase de instancia y la deletion policy; y, al terminar la creación, la instancia en la
+consola de **RDS → Databases** en estado `Available` con su endpoint.*
+
+### 3.4 Instance traffic and scaling
 
 Aquí se configura lo que exige el punto 2 del documento (más de una instancia):
 
@@ -196,7 +189,7 @@ revisarlos en la consola para tomar las capturas.
 📸 *Capturas para los puntos 1.b y 1.c del documento: la pantalla de Capacity con min 3 / max 6, y la
 pantalla Processes con el health check path `/health`.*
 
-### 2.6 Updates, monitoring and logging
+### 3.5 Updates, monitoring and logging
 
 - **Health reporting → System:** `Enhanced`
 - **Managed platform updates:** desactívelo durante la práctica, para que no interfiera con las
@@ -204,84 +197,49 @@ pantalla Processes con el health check path `/health`.*
 - **Deployment policy:** `All at once` (es la primera de las 4 estrategias que se van a medir).
 - **Log streaming to CloudWatch Logs:** actívelo si quiere ver los logs de gunicorn en CloudWatch
   (útil para depurar); fíjelo con retención de 1 día.
-
-- **Environment properties** ← aquí van las credenciales. Agregue:
+- **Environment properties:** agregue solo estas dos. Las de base de datos las pone Elastic
+  Beanstalk automáticamente.
 
   | Name | Value |
   |---|---|
-  | `APP_ENV` | `production` |
-  | `DB_ENGINE` | `postgresql` |
-  | `DB_HOST` | el endpoint de RDS de la Fase 1.3 |
-  | `DB_PORT` | `5432` |
-  | `DB_NAME` | `blacklistdb` |
-  | `DB_USER` | `postgres` |
-  | `DB_PASSWORD` | la contraseña maestra de RDS |
   | `STATIC_TOKEN` | el token que usará en Postman |
   | `JWT_SECRET_KEY` | una cadena aleatoria larga |
-  | `AUTO_CREATE_TABLES` | `true` |
 
   Genere valores aleatorios así:
 
   ```powershell
-  # Token estático y llave JWT
   [Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Max 256 }))
   ```
 
-  Estas variables **no** se versionan en GitHub: viven solo en la configuración del ambiente.
+  `APP_ENV=production` y `AUTO_CREATE_TABLES=true` ya vienen en `.ebextensions/01_app.config`.
+  `STATIC_TOKEN` y `JWT_SECRET_KEY` **no** se versionan en GitHub: viven solo aquí.
 
-### 2.7 Crear el ambiente
+### 3.6 Crear el ambiente
 
-**Submit**. La creación tarda entre 5 y 15 minutos (crea ALB, ASG, 3 instancias y despliega el
-código). Al terminar, el Health del ambiente debe quedar en **Ok (verde)**.
+**Submit**. La creación tarda entre 15 y 25 minutos (crea la base RDS, el ALB, el ASG, las 3
+instancias y despliega el código). Al terminar, el Health del ambiente debe quedar en **Ok (verde)**.
+
+Como Elastic Beanstalk crea la base antes de arrancar las instancias, la aplicación conecta en el
+primer arranque y crea la tabla `blacklist` automáticamente (`db.create_all()`).
 
 📸 *Captura: dashboard del ambiente en verde con la URL y la versión `v1-inicial`.*
 
 ---
 
-## Fase 3 – Conectar Elastic Beanstalk con RDS
+## Fase 4 – Verificar que todo funciona
 
-En este punto el ambiente probablemente aparece **Degraded** o **Severe**: la aplicación arrancó
-pero el security group de RDS todavía no permite el tráfico, así que `/health` responde 503 con
-`database: down`. Es el comportamiento esperado y se corrige ahora.
+### 4.1 Health check
 
-1. **Averigüe el security group de las instancias EC2 de Elastic Beanstalk:**
-   Elastic Beanstalk → `listanegra-env` → **Configuration** → *Instance traffic and scaling* → **Edit**
-   → sección **Instances** → **EC2 security groups**. Es algo como
-   `awseb-e-xxxxxxx-stack-AWSEBSecurityGroup-xxxxxxxx`. Copie su nombre o ID.
+```powershell
+$url = "http://listanegra-env.eba-xxxxxxx.us-east-1.elasticbeanstalk.com"
+Invoke-RestMethod -Uri "$url/health"
+# Esperado: @{status=ok; database=up}
+```
 
-2. **Autorice el acceso en el security group de RDS:**
-   EC2 → **Security Groups** → `sg-listanegra-rds` → **Inbound rules** → **Edit inbound rules** →
-   **Add rule**:
+Si responde `database: down`, la app está arriba pero no alcanza la base: vaya a
+[Problemas frecuentes](#problemas-frecuentes).
 
-   | Campo | Valor |
-   |---|---|
-   | Type | `PostgreSQL` |
-   | Protocol / Port | TCP / 5432 |
-   | Source | `Custom` → el security group de las instancias de EB |
-   | Description | `Acceso desde instancias de Elastic Beanstalk` |
-
-   **Save rules**.
-
-   > Use el **security group** como origen, no un rango de IPs. Las instancias cambian de IP en cada
-   > despliegue inmutable o evento de autoscaling; la regla por security group sigue funcionando.
-
-3. **Reinicie los servidores de aplicación** para que gunicorn reabra la conexión y cree las tablas:
-   Elastic Beanstalk → `listanegra-env` → **Actions** → **Restart app server(s)**.
-
-4. **Verifique:**
-
-   ```powershell
-   $url = "http://listanegra-env.eba-xxxxxxx.us-east-1.elasticbeanstalk.com"
-   Invoke-RestMethod -Uri "$url/health"
-   # Esperado: @{status=ok; database=up}
-   ```
-
-   El Health del ambiente debe volver a **Ok**.
-
-📸 *Captura: la regla de entrada 5432 en `sg-listanegra-rds` y la respuesta de `/health` con
-`database: up`.*
-
-### Prueba funcional completa
+### 4.2 Prueba funcional de los endpoints
 
 ```powershell
 $url   = "http://listanegra-env.eba-xxxxxxx.us-east-1.elasticbeanstalk.com"
@@ -310,14 +268,29 @@ catch { "HTTP $($_.Exception.Response.StatusCode.value__)" }
 En la respuesta del paso 1 confirme que `ip_address` contiene **su IP pública** (no la del
 balanceador): es la evidencia de que el microservicio registra la IP de origen correctamente.
 
-Luego importe la colección de `postman/` en Postman, ajuste `base_url` y `bearer_token`, y ejecute
+### 4.3 Postman
+
+Importe la colección y el environment de `postman/`, ajuste `base_url` y `bearer_token`, y ejecute
 los 14 escenarios con el **Collection Runner**.
 
 📸 *Captura: Collection Runner con los 14 escenarios en verde.*
 
+Publique la documentación desde Postman (**Collection → View documentation → Publish**) y anexe la
+URL al documento de la entrega.
+
+### 4.4 Ver los datos en la base (opcional, para el video)
+
+Con la Opción A la base no es pública, así que no se alcanza con pgAdmin desde su equipo. Para
+demostrar la persistencia:
+
+- La forma simple: `POST` y luego `GET` del mismo email, y después **Restart app server(s)** y
+  repetir el `GET`. Si sigue respondiendo `blacklisted: true`, el dato está en RDS y no en memoria.
+- La forma directa: conéctese a una instancia EC2 por **Session Manager** y ejecute
+  `psql -h $RDS_HOSTNAME -U postgres -d ebdb -c "SELECT * FROM blacklist;"`.
+
 ---
 
-## Fase 4 – Las 4 estrategias de despliegue (20% de la nota)
+## Fase 5 – Las 4 estrategias de despliegue (20% de la nota)
 
 ### Cómo cambiar de estrategia
 
@@ -419,7 +392,7 @@ f. Hallazgos: sin pérdida de disponibilidad; mayor costo temporal por la instan
 
 ---
 
-## Fase 5 – Checklist de la entrega
+## Fase 6 – Checklist de la entrega
 
 **Aplicación y repositorio**
 
@@ -449,16 +422,106 @@ f. Hallazgos: sin pérdida de disponibilidad; mayor costo temporal por la instan
 
 ---
 
+## Anexo A – Opción B: RDS independiente
+
+Use este anexo solo si necesita la base fuera del ambiente: para conectar varios ambientes a la
+misma base, hacer blue/green, elegir el nombre de la base, o porque el laboratorio de AWS Academy no
+permite crear la base desde Elastic Beanstalk.
+
+Ejecute el anexo **antes** de la Fase 3, porque necesitará el endpoint de la base.
+
+### A.1 Security group para la base de datos
+
+1. Consola → **EC2** → *Network & Security* → **Security Groups** → **Create security group**.
+2. **Name:** `sg-listanegra-rds`, **VPC:** la default (la misma que usará Elastic Beanstalk).
+3. **Inbound rules:** déjelo vacío; la regla se agrega en A.4, cuando exista el ambiente.
+4. **Create security group** y anote el ID (`sg-xxxxxxxx`).
+
+### A.2 Crear la instancia PostgreSQL
+
+1. Consola → **RDS** → **Databases** → **Create database**.
+2. `Standard create` → **Engine** `PostgreSQL` 15.x o 16.x → **Templates** `Free tier`
+   (o `Dev/Test` si la cuenta no ofrece free tier).
+3. **Settings:**
+   - **DB instance identifier:** `listanegra-db`
+   - **Master username:** `postgres`
+   - **Credentials management:** `Self managed`
+   - **Master password:** una contraseña fuerte. **Guárdela**, no se puede volver a ver.
+4. **Instance configuration:** `db.t3.micro` (o `db.t4g.micro`).
+5. **Storage:** 20 GB gp3. **Desactive** *Enable storage autoscaling*.
+6. **Connectivity:**
+   - **Compute resource:** `Don't connect to an EC2 compute resource`
+   - **VPC:** la default
+   - **Public access:** `No`
+   - **VPC security group:** `Choose existing` → `sg-listanegra-rds`, y **quite** el grupo `default`
+7. **Database authentication:** `Password authentication`.
+8. **Monitoring:** desactive *Performance Insights*.
+9. **Additional configuration** ← **paso crítico:**
+   - **Initial database name:** `blacklistdb`
+     Si deja este campo vacío, RDS crea el servidor pero **ninguna base de datos**, y la aplicación
+     fallará con `database "blacklistdb" does not exist`.
+   - **Backup retention:** 1 día (o 0 para la práctica).
+10. **Create database**. Tarda 5–10 minutos en pasar a `Available`.
+11. Abra `listanegra-db` → **Connectivity & security** y copie el **Endpoint** y el **Port**.
+
+### A.3 Variables de entorno en Elastic Beanstalk
+
+En la Fase 3.3 deje la sección **Database vacía**, y en la Fase 3.5 agregue, además de
+`STATIC_TOKEN` y `JWT_SECRET_KEY`:
+
+| Name | Value |
+|---|---|
+| `DB_ENGINE` | `postgresql` |
+| `DB_HOST` | el endpoint de RDS (sin `:5432`) |
+| `DB_PORT` | `5432` |
+| `DB_NAME` | `blacklistdb` |
+| `DB_USER` | `postgres` |
+| `DB_PASSWORD` | la contraseña maestra de RDS |
+
+### A.4 Abrir el puerto 5432 desde las instancias
+
+Al terminar la Fase 3, el ambiente aparecerá **Degraded** o **Severe**: la aplicación arrancó pero el
+security group de RDS todavía bloquea el tráfico, así que `/health` responde 503 con
+`database: down`. Es esperado y se corrige así:
+
+1. **Averigüe el security group de las instancias EC2:** Elastic Beanstalk → `listanegra-env` →
+   **Configuration** → *Instance traffic and scaling* → **Edit** → sección **Instances** →
+   **EC2 security groups**. Es algo como `awseb-e-xxxxxxx-stack-AWSEBSecurityGroup-xxxxxxxx`.
+
+2. **Autorice el acceso:** EC2 → **Security Groups** → `sg-listanegra-rds` → **Inbound rules** →
+   **Edit inbound rules** → **Add rule**:
+
+   | Campo | Valor |
+   |---|---|
+   | Type | `PostgreSQL` |
+   | Protocol / Port | TCP / 5432 |
+   | Source | `Custom` → el security group de las instancias de EB |
+   | Description | `Acceso desde instancias de Elastic Beanstalk` |
+
+   **Save rules**.
+
+   > Use el **security group** como origen, no un rango de IPs. Las instancias cambian de IP en cada
+   > despliegue inmutable o evento de autoscaling; la regla por security group sigue funcionando.
+
+3. **Actions → Restart app server(s)** para que gunicorn reabra la conexión y cree las tablas.
+
+4. Verifique con `GET /health` que responda `database: up`, y continúe en la Fase 4.
+
+📸 *Captura: la regla de entrada 5432 en `sg-listanegra-rds`.*
+
+---
+
 ## Problemas frecuentes
 
 | Síntoma | Causa | Solución |
 |---|---|---|
 | `502 Bad Gateway` | gunicorn no arrancó | `Logs` → *Request logs* → *Last 100 lines*; revise `/var/log/web.stdout.log` |
-| `/health` responde `database: down` | Security group de RDS sin la regla 5432 | Fase 3, paso 2 |
-| `could not translate host name` | `DB_HOST` mal escrito | Revise *Environment properties*; use el endpoint, sin `:5432` |
-| `database "blacklistdb" does not exist` | No se definió *Initial database name* | Cree la base con `psql`, o recree la instancia RDS |
-| `password authentication failed` | `DB_PASSWORD` incorrecto | Reinicie la contraseña maestra en RDS y actualice la variable |
-| Health `Severe` justo tras crear el ambiente | Falta la conexión a RDS | Es esperado; complete la Fase 3 y haga *Restart app server(s)* |
+| `/health` responde `database: down` (Opción A) | La base aún se está creando, o se definieron variables `DB_*` que sobrescriben las `RDS_*` | Espere a que RDS esté `Available`; borre las `DB_HOST`/`DB_NAME`/`DB_USER`/`DB_PASSWORD` de *Environment properties* |
+| `/health` responde `database: down` (Opción B) | Security group de RDS sin la regla 5432 | Anexo A.4 |
+| `could not translate host name` | `DB_HOST` mal escrito | Use el endpoint sin `:5432` |
+| `database "blacklistdb" does not exist` | En la Opción B no se definió *Initial database name* | Cree la base con `psql`, o recree la instancia RDS |
+| `password authentication failed` | Contraseña incorrecta | Opción A: *Configuration → Database → Edit → Password*. Opción B: reinicie la contraseña maestra en RDS y actualice `DB_PASSWORD` |
+| La contraseña de la base es rechazada al crear el ambiente | Las bases acopladas exigen 8–16 caracteres ASCII imprimibles sin `/`, `\` ni `@` | Use una contraseña que cumpla esa regla |
 | `not authorized to perform: iam:CreateRole` | Se eligió crear roles nuevos en AWS Academy | Use `LabRole` y `LabInstanceProfile` |
 | `Requires a minimum of 2 subnets` | Se seleccionó una sola subred | Marque subredes en dos AZ distintas |
 | El ZIP se despliega pero `.ebextensions` no aplica | La carpeta oculta no entró al ZIP | Use `git archive` o `Get-ChildItem -Force` |
@@ -475,6 +538,9 @@ Elastic Beanstalk → `listanegra-env` → **Logs** → **Request logs** → *La
 
 ### Limpieza al terminar
 
-Para no consumir créditos: Elastic Beanstalk → **Actions** → **Terminate environment**, y
-RDS → **Actions** → **Delete** (desmarque *Create final snapshot* si no lo necesita). Borre también
-el security group `sg-listanegra-rds`.
+Para no consumir créditos: Elastic Beanstalk → **Actions** → **Terminate environment**.
+
+- Con la Opción A y deletion policy `Retain`, la base **sobrevive**: bórrela aparte en
+  RDS → **Actions** → **Delete**.
+- Con la Opción A y deletion policy `Delete`, la base se borra junto con el ambiente.
+- Con la Opción B, borre la instancia RDS y el security group `sg-listanegra-rds` manualmente.
