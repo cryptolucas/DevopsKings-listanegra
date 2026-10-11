@@ -184,12 +184,15 @@ El esquema se crea automáticamente al arrancar (`db.create_all()`), controlado 
 2. **`DB_*`** — `DB_ENGINE` (default `postgresql`), `DB_HOST`, `DB_PORT` (default `5432`),
    `DB_NAME`, `DB_USER`, `DB_PASSWORD`. Es lo que se usa con una **instancia RDS independiente**.
 3. **`RDS_*`** — `RDS_HOSTNAME`, `RDS_PORT`, `RDS_DB_NAME`, `RDS_USERNAME`, `RDS_PASSWORD`. Son las
-   variables que **Elastic Beanstalk inyecta automáticamente** cuando la base de datos está acoplada
-   al ambiente. En ese modo no hay que configurar nada: la app las lee sola.
+   variables que Elastic Beanstalk inyecta cuando la base está *acoplada* al ambiente. Se soportan
+   por compatibilidad, pero el asistente de la consola ya no ofrece crear bases acopladas: el camino
+   actual es una instancia RDS independiente con las `DB_*`.
 4. **SQLite local** si no hay ninguna de las anteriores, útil para desarrollo.
 
-> Con base acoplada al ambiente, **no** defina `DB_HOST`/`DB_NAME`/`DB_USER`/`DB_PASSWORD`: tienen
-> mayor precedencia y sobrescribirían a las `RDS_*`.
+> ⚠️ El fallback a SQLite es silencioso: si olvida las `DB_*` en producción, la aplicación arranca y
+> `/health` responde `database: up`, pero cada instancia tendrá su propia base y se perderá en cada
+> despliegue. La prueba de que hay una base compartida es repetir el mismo `GET` varias veces y
+> obtener siempre la misma respuesta.
 
 ---
 

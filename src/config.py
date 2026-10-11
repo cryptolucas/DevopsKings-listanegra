@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 from datetime import timedelta
+from urllib.parse import quote_plus
 
 
 def _build_database_uri() -> str:
@@ -40,10 +41,38 @@ def _build_database_uri() -> str:
     if host and name and user:
         engine = os.environ.get("DB_ENGINE", "postgresql")
         driver = "postgresql+psycopg2" if engine.startswith("postgres") else engine
-        return f"{driver}://{user}:{password}@{host}:{port}/{name}"
+        # Escapado obligatorio: una contraseña con %, :, #, ? o / rompe el
+        # parseo de la URI y SQLAlchemy enviaria credenciales distintas a las
+        # configuradas (el sintoma es un "password authentication failed"
+        # aunque la contraseña sea correcta).
+        safe_user = quote_plus(user)
+        safe_password = quote_plus(password) if password else ""
+        return f"{driver}://{safe_user}:{safe_password}@{host}:{port}/{name}"
 
     sqlite_path = os.path.join(os.path.abspath(os.path.dirname(os.path.dirname(__file__))), "blacklist.db")
     return f"sqlite:///{sqlite_path}"
+
+
+def _build_engine_options(uri: str) -> dict:
+    """Opciones del engine de SQLAlchemy segun el motor en uso."""
+    options: dict = {
+        # Evita errores "server closed the connection unexpectedly" cuando
+        # gunicorn mantiene procesos vivos mas tiempo que RDS.
+        "pool_pre_ping": True,
+        "pool_recycle": 280,
+    }
+
+    if uri.startswith("postgresql"):
+        # Sin este timeout, una conexion bloqueada (p. ej. security group sin
+        # la regla 5432) deja la peticion colgada hasta el timeout de TCP: el
+        # health check del ELB aborta antes y en los logs aparece un 499 sin
+        # explicacion. Con el timeout, /health responde 503 rapido y el error
+        # real queda registrado.
+        options["connect_args"] = {
+            "connect_timeout": int(os.environ.get("DB_CONNECT_TIMEOUT", "5")),
+        }
+
+    return options
 
 
 class Config:
@@ -59,12 +88,7 @@ class Config:
     # --- SQLAlchemy ----------------------------------------------------------
     SQLALCHEMY_DATABASE_URI = _build_database_uri()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        # Evita errores "server closed the connection unexpectedly" cuando el
-        # balanceador de EB mantiene procesos vivos mas tiempo que RDS.
-        "pool_pre_ping": True,
-        "pool_recycle": 280,
-    }
+    SQLALCHEMY_ENGINE_OPTIONS = _build_engine_options(SQLALCHEMY_DATABASE_URI)
 
     # --- Seguridad -----------------------------------------------------------
     # Token estatico/predefinido aceptado como Bearer Token (lo permite el

@@ -37,9 +37,13 @@ class HealthResource(Resource):
         status_code = 200
         try:
             db.session.execute(text("SELECT 1"))
-        except Exception:  # noqa: BLE001 - el health check nunca debe explotar
+        except Exception as error:  # noqa: BLE001 - el health check nunca debe explotar
             database = "down"
             status_code = 503
+            # Se registra para poder diagnosticar desde los logs de Elastic
+            # Beanstalk; la respuesta HTTP no expone el detalle del error.
+            current_app.logger.error("Health check: la base de datos no responde: %s", error)
+            db.session.rollback()
 
         return {
             "status": "ok" if status_code == 200 else "degraded",
