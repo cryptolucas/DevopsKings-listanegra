@@ -1,0 +1,4 @@
+# Dependencias solo para desarrollo local y pruebas.
+# Beanstalk instala unicamente requirements.txt.
+-r requirements.txt
+pytest==8.3.3
