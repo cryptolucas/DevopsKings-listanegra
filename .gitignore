@@ -1,5 +1,6 @@
 # Python
 __pycache__/
+.pytest_cache/
 *.py[cod]
 *.egg-info/
 .Python
@@ -35,3 +36,6 @@ instance/
 
 # Logs
 *.log
+
+# Evidencias de los despliegues (salida de scripts/monitor_deploy.*): si se versionan
+!evidencias/*.log

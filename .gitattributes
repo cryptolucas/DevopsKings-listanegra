@@ -1,0 +1,2 @@
+# Los scripts de bash deben conservar LF aunque se editen en Windows.
+*.sh text eol=lf
