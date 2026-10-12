@@ -5,11 +5,18 @@ Load Balancer en Elastic Beanstalk. No requiere autorizacion porque el
 balanceador no envia el header ``Authorization``.
 """
 
+import socket
+
 from flask import current_app
 from flask_restful import Resource
 from sqlalchemy import text
 
 from src.extensions import db
+from src.version import APP_VERSION
+
+# En EC2 el hostname es ip-172-31-x-x: identifica que instancia respondio, lo
+# que permite ver durante un despliegue si atienden las iniciales o las nuevas.
+HOSTNAME = socket.gethostname()
 
 
 class RootResource(Resource):
@@ -18,7 +25,8 @@ class RootResource(Resource):
     def get(self):
         return {
             "service": "blacklist-microservice",
-            "version": current_app.config.get("APP_VERSION", "1.0.0"),
+            "version": APP_VERSION,
+            "host": HOSTNAME,
             "status": "ok",
             "endpoints": {
                 "add_to_blacklist": "POST /blacklists",
@@ -48,4 +56,6 @@ class HealthResource(Resource):
         return {
             "status": "ok" if status_code == 200 else "degraded",
             "database": database,
+            "version": APP_VERSION,
+            "host": HOSTNAME,
         }, status_code
