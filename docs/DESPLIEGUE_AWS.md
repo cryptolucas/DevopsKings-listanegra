@@ -114,8 +114,9 @@ El ZIP debe contener los archivos **en su raíz**, no dentro de una carpeta.
 ```powershell
 cd "d:\SEMESTRE 10\DEVOPS\DevopsKings-listanegra"
 
-# Opción recomendada: empaqueta exactamente lo que está versionado en git
-git archive --format=zip --output ..\listanegra-v1.zip HEAD
+# Opción recomendada: empaqueta exactamente lo que está versionado en git.
+# Genera ..\listanegra-v<versión>.zip con la versión de src/version.py
+.\scriptsuild_zip.ps1
 ```
 
 Si prefiere no usar git:
@@ -289,7 +290,7 @@ ambiente.*
 ```powershell
 $url = "http://listanegra-env.eba-xxxxxxx.us-east-1.elasticbeanstalk.com"
 Invoke-RestMethod -Uri "$url/health"
-# Esperado: @{status=ok; database=up}
+# Esperado: @{status=ok; database=up; version=1.0.0; host=ip-172-31-x-x}
 ```
 
 El Health del ambiente debe pasar a **Ok (verde)**. Si responde `database: down`, vaya a
@@ -366,17 +367,32 @@ Elastic Beanstalk → `listanegra-env` → **Configuration** → *Updates, monit
 
 ### Cómo generar una versión nueva para desplegar
 
-Cada medición necesita un artefacto distinto. Introduzca un cambio trivial y visible, por ejemplo
-suba la versión en `src/resources/health.py` (`"version"`), o defina la variable de entorno
-`APP_VERSION`. Luego:
+Cada medición necesita un artefacto distinto. La versión vive en **`src/version.py`**
+(`APP_VERSION`), y `/health` la devuelve junto con el `host` (la instancia EC2 que respondió).
 
-```powershell
-git commit -am "v2: prueba de estrategia rolling"
-git archive --format=zip --output ..\listanegra-v2.zip HEAD
-```
+> No use una environment property para la versión: cambiarla dispara un *configuration update*,
+> no un *application deployment*, y lo que se mide es la deployment policy.
 
-Y en la consola: **Upload and deploy** → seleccione el ZIP → **Version label** descriptivo
-(`v2-rolling`) → **Deploy**.
+1. Suba la versión en `src/version.py` (`1.0.1`, `1.0.2`, … una por estrategia, ver
+   [ESTRATEGIAS.md](ESTRATEGIAS.md)) y haga commit:
+
+   ```powershell
+   git commit -am "v1.0.1: prueba de estrategia all at once"
+   ```
+
+2. Genere el ZIP. El script lee la versión, empaqueta `HEAD` con `git archive` en
+   `..\listanegra-v<versión>.zip` y se niega a empaquetar si `src/version.py` no está commiteado:
+
+   ```powershell
+   .\scripts\build_zip.ps1
+   ```
+
+   Si PowerShell bloquea el script: `Set-ExecutionPolicy -Scope Process Bypass`.
+
+3. En **otra terminal**, arranque el monitor (sección siguiente) **antes** de desplegar.
+
+4. En la consola: **Upload and deploy** → seleccione el ZIP → **Version label** descriptivo
+   (`v1.0.1-all-at-once`) → **Deploy**.
 
 ### Cómo medir el tiempo exacto
 
@@ -391,27 +407,26 @@ ambos eventos visibles.
 
 ### Cómo validar que el despliegue estaba en ejecución (sin downtime)
 
-Deje este monitor corriendo en una terminal **durante todo el despliegue**. Registra la
-disponibilidad segundo a segundo y produce el resumen que pide el literal *b*:
+Deje el monitor corriendo en una terminal **durante todo el despliegue**. Consulta `/health`
+cada segundo e imprime hora, segundos transcurridos, código HTTP, versión y host
+(verde = versión nueva, amarillo = versión anterior, rojo = fallo):
 
 ```powershell
-$url = "http://listanegra-env.eba-xxxxxxx.us-east-1.elasticbeanstalk.com/health"
-$ok = 0; $fail = 0; $inicio = Get-Date
-while ($true) {
-  $t = (Get-Date).ToString("HH:mm:ss")
-  try {
-    $r = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 5
-    $ok++
-    Write-Host "$t  HTTP $($r.StatusCode)  OK=$ok  FAIL=$fail" -ForegroundColor Green
-  } catch {
-    $fail++
-    $code = $_.Exception.Response.StatusCode.value__
-    Write-Host "$t  FALLO ($code)  OK=$ok  FAIL=$fail" -ForegroundColor Red
-  }
-  Start-Sleep -Seconds 1
-}
-# Ctrl+C para detener. Transcurrido: (Get-Date) - $inicio
+.\scripts\monitor_deploy.ps1 -Url http://listanegra-env.eba-xxxxxxx.us-east-1.elasticbeanstalk.com -Target 1.0.1
 ```
+
+En Mac/Linux: `./scripts/monitor_deploy.sh <url> 1.0.1`.
+
+Termina solo cuando lleva 30 respuestas seguidas con la versión `-Target` (o con Ctrl+C) e imprime
+un resumen con lo que piden los literales:
+
+- **b:** solicitudes totales y fallidas, y la ventana en que hubo fallos (downtime).
+- **c (aproximado):** segundo de la primera respuesta nueva y segundo desde el que el 100% responde
+  la versión nueva. El tiempo oficial sigue siendo el de **Events**.
+- **d:** hosts que respondieron con la versión anterior y con la nueva, y si son los mismos
+  (instancias iniciales) o distintos (instancias nuevas).
+
+Todo queda en `evidencias/<versión>-<fecha>.log` para anexarlo al documento.
 
 Evidencias complementarias de que el despliegue estaba activo:
 
@@ -441,7 +456,7 @@ Configuración adicional por estrategia, en la misma pantalla **Deployments**:
 - *Rolling with additional batch*: **Batch size** → `Fixed = 1`.
 - *Traffic splitting*: **Traffic split** = 10%, **Traffic splitting evaluation time** = 5 min.
 
-Plantilla para documentar cada estrategia:
+Los resultados se registran en [ESTRATEGIAS.md](ESTRATEGIAS.md). Ejemplo de cómo llenar una estrategia:
 
 ```
 Estrategia: Rolling with additional batch
