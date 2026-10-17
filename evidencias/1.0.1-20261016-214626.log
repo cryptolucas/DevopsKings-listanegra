@@ -1,0 +1,168 @@
+﻿Monitor de despliegue - 2026-10-16 21:46:26
+URL: http://listanegra-env.eba-jaibnntu.us-east-2.elasticbeanstalk.com/health | version objetivo: 1.0.1 | fin tras 30 respuestas seguidas
+Log: C:\Users\sebas\Desktop\Uni\MISW - DevOps\DevopsKings-listanegra\evidencias\1.0.1-20261016-214626.log
+
+21:46:26  t=    0s  HTTP 200  version=-        host=-
+21:46:27  t=    1s  HTTP 200  version=-        host=-
+21:46:28  t=    2s  HTTP 200  version=-        host=-
+21:46:29  t=    3s  HTTP 200  version=-        host=-
+21:46:30  t=    4s  HTTP 200  version=-        host=-
+21:46:31  t=    5s  HTTP 200  version=-        host=-
+21:46:32  t=    6s  HTTP 200  version=-        host=-
+21:46:33  t=    7s  HTTP 200  version=-        host=-
+21:46:34  t=    8s  HTTP 200  version=-        host=-
+21:46:35  t=    9s  HTTP 200  version=-        host=-
+21:46:36  t=   10s  HTTP 200  version=-        host=-
+21:46:37  t=   11s  HTTP 200  version=-        host=-
+21:46:38  t=   12s  HTTP 200  version=-        host=-
+21:46:39  t=   13s  HTTP 200  version=-        host=-
+21:46:40  t=   14s  HTTP 200  version=-        host=-
+21:46:41  t=   15s  HTTP 200  version=-        host=-
+21:46:42  t=   16s  HTTP 200  version=-        host=-
+21:46:43  t=   17s  HTTP 200  version=-        host=-
+21:46:44  t=   18s  HTTP 200  version=-        host=-
+21:46:45  t=   19s  HTTP 200  version=-        host=-
+21:46:46  t=   20s  HTTP 200  version=-        host=-
+21:46:48  t=   21s  HTTP 200  version=-        host=-
+21:46:49  t=   22s  HTTP 200  version=-        host=-
+21:46:50  t=   23s  HTTP 200  version=-        host=-
+21:46:51  t=   24s  HTTP 200  version=-        host=-
+21:46:52  t=   25s  HTTP 200  version=-        host=-
+21:46:53  t=   26s  HTTP 200  version=-        host=-
+21:46:54  t=   27s  HTTP 200  version=-        host=-
+21:46:55  t=   28s  HTTP 200  version=-        host=-
+21:46:56  t=   29s  HTTP 200  version=-        host=-
+21:46:57  t=   30s  HTTP 200  version=-        host=-
+21:46:58  t=   31s  HTTP 200  version=-        host=-
+21:46:59  t=   32s  HTTP 200  version=-        host=-
+21:47:00  t=   33s  HTTP 200  version=-        host=-
+21:47:01  t=   34s  HTTP 200  version=-        host=-
+21:47:02  t=   35s  HTTP 200  version=-        host=-
+21:47:03  t=   36s  HTTP 200  version=-        host=-
+21:47:04  t=   37s  HTTP 200  version=-        host=-
+21:47:05  t=   38s  HTTP 200  version=-        host=-
+21:47:06  t=   39s  HTTP 200  version=-        host=-
+21:47:07  t=   41s  HTTP 200  version=-        host=-
+21:47:08  t=   42s  HTTP 200  version=-        host=-
+21:47:09  t=   43s  HTTP 200  version=-        host=-
+21:47:10  t=   44s  HTTP 200  version=-        host=-
+21:47:11  t=   45s  HTTP 200  version=-        host=-
+21:47:12  t=   46s  HTTP 200  version=-        host=-
+21:47:13  t=   47s  HTTP 200  version=-        host=-
+21:47:14  t=   48s  HTTP 200  version=-        host=-
+21:47:15  t=   49s  HTTP 200  version=-        host=-
+21:47:16  t=   50s  HTTP 200  version=-        host=-
+21:47:17  t=   51s  HTTP 200  version=-        host=-
+21:47:18  t=   52s  HTTP 200  version=-        host=-
+21:47:19  t=   53s  HTTP 200  version=-        host=-
+21:47:20  t=   54s  HTTP 200  version=-        host=-
+21:47:21  t=   55s  HTTP 200  version=-        host=-
+21:47:22  t=   56s  HTTP 200  version=-        host=-
+21:47:23  t=   57s  HTTP 200  version=-        host=-
+21:47:24  t=   58s  HTTP 200  version=-        host=-
+21:47:25  t=   59s  HTTP 200  version=-        host=-
+21:47:26  t=   60s  HTTP 200  version=-        host=-
+21:47:27  t=   61s  HTTP 200  version=-        host=-
+21:47:28  t=   62s  HTTP 200  version=-        host=-
+21:47:29  t=   63s  HTTP 200  version=-        host=-
+21:47:30  t=   64s  HTTP 200  version=-        host=-
+21:47:31  t=   65s  HTTP 200  version=-        host=-
+21:47:32  t=   66s  HTTP 200  version=-        host=-
+21:47:33  t=   67s  HTTP 200  version=-        host=-
+21:47:34  t=   68s  HTTP 200  version=-        host=-
+21:47:35  t=   69s  HTTP 200  version=-        host=-
+21:47:36  t=   70s  HTTP 200  version=-        host=-
+21:47:37  t=   71s  HTTP 200  version=-        host=-
+21:47:38  t=   72s  HTTP 200  version=-        host=-
+21:47:39  t=   73s  HTTP 200  version=-        host=-
+21:47:40  t=   74s  HTTP 200  version=-        host=-
+21:47:41  t=   75s  HTTP 200  version=-        host=-
+21:47:42  t=   76s  HTTP 200  version=-        host=-
+21:47:43  t=   77s  HTTP 200  version=-        host=-
+21:47:44  t=   78s  HTTP 200  version=-        host=-
+21:47:45  t=   79s  HTTP 200  version=-        host=-
+21:47:46  t=   80s  HTTP 200  version=-        host=-
+21:47:47  t=   81s  HTTP 200  version=-        host=-
+21:47:48  t=   82s  HTTP 200  version=-        host=-
+21:47:49  t=   83s  HTTP 200  version=-        host=-
+21:47:50  t=   84s  HTTP 200  version=-        host=-
+21:47:51  t=   85s  HTTP 200  version=-        host=-
+21:47:52  t=   86s  HTTP 200  version=-        host=-
+21:47:53  t=   87s  HTTP 200  version=-        host=-
+21:47:54  t=   88s  HTTP 200  version=-        host=-
+21:47:55  t=   89s  HTTP 200  version=-        host=-
+21:47:56  t=   90s  HTTP 200  version=-        host=-
+21:47:57  t=   91s  HTTP 200  version=-        host=-
+21:47:58  t=   92s  HTTP 200  version=-        host=-
+21:47:59  t=   93s  HTTP 200  version=-        host=-
+21:48:00  t=   94s  HTTP 200  version=-        host=-
+21:48:01  t=   95s  HTTP 200  version=-        host=-
+21:48:02  t=   96s  HTTP 200  version=-        host=-
+21:48:03  t=   97s  HTTP 200  version=-        host=-
+21:48:04  t=   98s  HTTP 200  version=-        host=-
+21:48:05  t=   99s  HTTP 200  version=-        host=-
+21:48:06  t=  100s  HTTP 200  version=-        host=-
+21:48:07  t=  101s  HTTP 200  version=-        host=-
+21:48:08  t=  102s  HTTP 200  version=-        host=-
+21:48:09  t=  103s  HTTP 200  version=-        host=-
+21:48:10  t=  104s  HTTP 200  version=-        host=-
+21:48:11  t=  105s  HTTP 200  version=-        host=-
+21:48:12  t=  106s  HTTP 200  version=-        host=-
+21:48:13  t=  107s  HTTP 200  version=-        host=-
+21:48:14  t=  108s  HTTP 502  version=-        host=-
+21:48:15  t=  109s  HTTP 502  version=-        host=-
+21:48:16  t=  110s  HTTP 502  version=-        host=-
+21:48:17  t=  111s  HTTP 502  version=-        host=-
+21:48:19  t=  112s  HTTP 502  version=-        host=-
+21:48:20  t=  113s  HTTP 502  version=-        host=-
+21:48:21  t=  114s  HTTP 200  version=1.0.1    host=ip-172-31-2-67.us-east-2.compute.internal
+21:48:22  t=  115s  HTTP 200  version=1.0.1    host=ip-172-31-43-122.us-east-2.compute.internal
+21:48:23  t=  116s  HTTP 200  version=1.0.1    host=ip-172-31-25-220.us-east-2.compute.internal
+21:48:24  t=  117s  HTTP 200  version=1.0.1    host=ip-172-31-2-67.us-east-2.compute.internal
+21:48:25  t=  118s  HTTP 200  version=1.0.1    host=ip-172-31-43-122.us-east-2.compute.internal
+21:48:26  t=  119s  HTTP 200  version=1.0.1    host=ip-172-31-25-220.us-east-2.compute.internal
+21:48:27  t=  120s  HTTP 200  version=1.0.1    host=ip-172-31-2-67.us-east-2.compute.internal
+21:48:28  t=  121s  HTTP 200  version=1.0.1    host=ip-172-31-43-122.us-east-2.compute.internal
+21:48:29  t=  122s  HTTP 200  version=1.0.1    host=ip-172-31-25-220.us-east-2.compute.internal
+21:48:30  t=  123s  HTTP 200  version=1.0.1    host=ip-172-31-2-67.us-east-2.compute.internal
+21:48:31  t=  124s  HTTP 200  version=1.0.1    host=ip-172-31-43-122.us-east-2.compute.internal
+21:48:32  t=  125s  HTTP 200  version=1.0.1    host=ip-172-31-25-220.us-east-2.compute.internal
+21:48:33  t=  126s  HTTP 200  version=1.0.1    host=ip-172-31-2-67.us-east-2.compute.internal
+21:48:34  t=  127s  HTTP 200  version=1.0.1    host=ip-172-31-43-122.us-east-2.compute.internal
+21:48:35  t=  128s  HTTP 200  version=1.0.1    host=ip-172-31-25-220.us-east-2.compute.internal
+21:48:36  t=  129s  HTTP 200  version=1.0.1    host=ip-172-31-2-67.us-east-2.compute.internal
+21:48:37  t=  130s  HTTP 200  version=1.0.1    host=ip-172-31-43-122.us-east-2.compute.internal
+21:48:38  t=  131s  HTTP 200  version=1.0.1    host=ip-172-31-25-220.us-east-2.compute.internal
+21:48:39  t=  132s  HTTP 200  version=1.0.1    host=ip-172-31-2-67.us-east-2.compute.internal
+21:48:40  t=  134s  HTTP 200  version=1.0.1    host=ip-172-31-43-122.us-east-2.compute.internal
+21:48:41  t=  135s  HTTP 200  version=1.0.1    host=ip-172-31-25-220.us-east-2.compute.internal
+21:48:42  t=  136s  HTTP 200  version=1.0.1    host=ip-172-31-2-67.us-east-2.compute.internal
+21:48:43  t=  137s  HTTP 200  version=1.0.1    host=ip-172-31-43-122.us-east-2.compute.internal
+21:48:44  t=  138s  HTTP 200  version=1.0.1    host=ip-172-31-25-220.us-east-2.compute.internal
+21:48:45  t=  139s  HTTP 200  version=1.0.1    host=ip-172-31-2-67.us-east-2.compute.internal
+21:48:46  t=  140s  HTTP 200  version=1.0.1    host=ip-172-31-43-122.us-east-2.compute.internal
+21:48:47  t=  141s  HTTP 200  version=1.0.1    host=ip-172-31-25-220.us-east-2.compute.internal
+21:48:48  t=  142s  HTTP 200  version=1.0.1    host=ip-172-31-2-67.us-east-2.compute.internal
+21:48:49  t=  143s  HTTP 200  version=1.0.1    host=ip-172-31-43-122.us-east-2.compute.internal
+21:48:50  t=  144s  HTTP 200  version=1.0.1    host=ip-172-31-25-220.us-east-2.compute.internal
+
+================ RESUMEN ================
+Inicio: 21:46:26   Fin: 21:48:51
+Duracion del monitoreo: 2 min 25 s (145 s)
+Solicitudes: 143   Exitosas: 137   Fallidas: 6
+Primera respuesta con 1.0.1: t=114s
+100% en 1.0.1 desde: t=113s -> 1 min 53 s (113 s)
+Downtime observado: 6 solicitudes fallidas entre t=108s y t=113s (ventana de 6 s, racha maxima de 6 fallos seguidos)
+Respuestas por version:
+  -          107
+  1.0.1      30
+Respuestas por host:
+  -                    107
+  ip-172-31-25-220.us-east-2.compute.internal 10
+  ip-172-31-2-67.us-east-2.compute.internal 10
+  ip-172-31-43-122.us-east-2.compute.internal 10
+Hosts con version anterior: -
+Hosts con version 1.0.1: ip-172-31-25-220.us-east-2.compute.internal, ip-172-31-2-67.us-east-2.compute.internal, ip-172-31-43-122.us-east-2.compute.internal
+Literal d: la nueva version corre sobre instancias NUEVAS.
+El tiempo oficial (literal c) es el de la pestana Events: 'Environment update is starting' -> 'completed successfully'.
+Log guardado en C:\Users\sebas\Desktop\Uni\MISW - DevOps\DevopsKings-listanegra\evidencias\1.0.1-20261016-214626.log
