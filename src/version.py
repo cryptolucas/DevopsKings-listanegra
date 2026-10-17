@@ -6,4 +6,4 @@ porque cambiar una environment property en Elastic Beanstalk dispara un
 deployment policies hay que subir un bundle nuevo con esta constante cambiada.
 """
 
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.0.1"
