@@ -54,17 +54,28 @@
       },
       "event": [
         {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Email unico por corrida: el caso exitoso siempre responde 201.",
+              "// 03 (duplicado -> 409) y 08 (GET) reutilizan esta misma variable.",
+              "const email = `spammer.${Date.now()}@example.com`;",
+              "pm.environment.set('email_bloqueado', email);",
+              "pm.collectionVariables.set('email_bloqueado', email);"
+            ]
+          }
+        },
+        {
           "listen": "test",
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('Status 201 o 409 si ya existia', () => pm.expect([201, 409]).to.include(pm.response.code));",
-              "if (pm.response.code === 201) {",
-              "  const body = pm.response.json();",
-              "  pm.test('created = true', () => pm.expect(body.created).to.be.true);",
-              "  pm.test('Guarda la IP de origen', () => pm.expect(body.blacklist.ip_address).to.not.be.empty);",
-              "  pm.test('Guarda la fecha/hora', () => pm.expect(body.blacklist.created_at).to.not.be.empty);",
-              "}"
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "const body = pm.response.json();",
+              "pm.test('created = true', () => pm.expect(body.created).to.be.true);",
+              "pm.test('Guarda la IP de origen', () => pm.expect(body.blacklist.ip_address).to.not.be.empty);",
+              "pm.test('Guarda la fecha/hora', () => pm.expect(body.blacklist.created_at).to.not.be.empty);"
             ]
           }
         }
@@ -77,11 +88,23 @@
         "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"email\": \"sin.motivo@example.com\",\n  \"app_uuid\": \"{{app_uuid}}\"\n}"
+          "raw": "{\n  \"email\": \"sin.motivo.{{$timestamp}}@example.com\",\n  \"app_uuid\": \"{{app_uuid}}\"\n}"
         },
         "url": { "raw": "{{base_url}}/blacklists", "host": ["{{base_url}}"], "path": ["blacklists"] },
         "description": "Demuestra que `blocked_reason` es opcional."
-      }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 201 sin blocked_reason', () => pm.response.to.have.status(201));",
+              "pm.test('blocked_reason queda vacio', () => pm.expect(pm.response.json().blacklist.blocked_reason).to.be.null);"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "03 - POST /blacklists (email duplicado -> 409)",
