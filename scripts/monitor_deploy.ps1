@@ -100,7 +100,8 @@ try {
                 $streak++
                 Write-Log $line "Green"
             } else {
-                $hostsOld[$hostName] = $true
+                # Un codigo viejo sin campo host no permite comparar instancias.
+                if ($hostName -ne "-") { $hostsOld[$hostName] = $true }
                 $lastNonTarget = $elapsed
                 $streak = 0
                 Write-Log $line "Yellow"

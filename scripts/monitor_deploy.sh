@@ -39,7 +39,7 @@ summary() {
       if ($2 != 200) { fail++; streak = 0; last_non = $1; if (!ff) ff = $1 "s"; lf = $1; next }
       ver[$3]++; hst[$4]++
       if ($3 == target) { if (ft == "") ft = $1; neu[$4] = 1; streak++ }
-      else { old[$4] = 1; last_non = $1; streak = 0 } }
+      else { if ($4 != "-") old[$4] = 1; last_non = $1; streak = 0 } }
     END {
       printf "Solicitudes: %d   Exitosas: %d   Fallidas: %d\n", total, total - fail, fail
       if (ft != "") printf "Primera respuesta con %s: t=%ss\n", target, ft
