@@ -39,3 +39,4 @@ instance/
 
 # Evidencias de los despliegues (salida de scripts/monitor_deploy.*): si se versionan
 !evidencias/*.log
+reports/
