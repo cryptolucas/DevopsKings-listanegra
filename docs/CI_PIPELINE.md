@@ -65,12 +65,9 @@ El repositorio es de `cryptolucas`, así que **Lucas** debe autorizar la conexi�
    - Provider: **Other build providers → AWS CodeBuild**
    - **Create project** (se abre otra ventana):
      - Project name: `listanegra-build`
-     - Environment: Provisioning *On-demand* → Compute **Lambda** → *Managed image* →
-       **Amazon Linux** → Runtime **Python** →
-       **`aws/codebuild/amazonlinux-x86_64-lambda-standard:python3.11`**, memoria 2 GB
-     - (Con cómputo EC2 se usa `aws/codebuild/amazonlinux-x86_64-standard:5.0`. Las cuentas nuevas
-       suelen tener en 0 la cuota de builds concurrentes en EC2, y el build falla con
-       `AccountLimitExceededException`; el cómputo Lambda tiene una cuota aparte.)
+     - Environment: *Managed image* → **Amazon Linux** → *Standard* →
+       **`aws/codebuild/amazonlinux-x86_64-standard:5.0`**
+     - Compute: el más pequeño (3 GB, 2 vCPUs)
      - Service role: *New service role*
      - Buildspec: **Use a buildspec file** (deje el nombre vacío; usa `buildspec.yml`)
      - Logs: CloudWatch activado
@@ -83,9 +80,8 @@ El repositorio es de `cryptolucas`, así que **Lucas** debe autorizar la conexi�
 El artefacto queda en el bucket que crea CodePipeline (`codepipeline-us-east-2-...`), carpeta
 `listanegra-ci/BuildArtif/`. Ese zip es el mismo bundle que se sube a Beanstalk.
 
-> Si el pipeline falla con `Cannot have more than 0 builds in queue for the account`, la cuota de
-> builds concurrentes del tipo de cómputo elegido está en 0: cambie el proyecto a cómputo Lambda o
-> pida el aumento en **Service Quotas → AWS CodeBuild**.
+> Si el build falla en la fase **INSTALL** con un error de `runtime-versions`, la imagen no tiene
+> Python 3.11. Revise la imagen elegida (debe ser `amazonlinux-x86_64-standard:5.0`).
 
 ## Paso 3 – Ejecución exitosa (documento, 10%)
 
