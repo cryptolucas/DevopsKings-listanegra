@@ -36,7 +36,7 @@ python -m pytest -v
 
 El repositorio es de `cryptolucas`, así que **Lucas** debe autorizar la conexión:
 
-1. Consola de AWS en **us-east-2 (Ohio)** → **Developer Tools → Settings → Connections →
+1. Consola de AWS en **us-east-1 (N. Virginia)** → **Developer Tools → Settings → Connections →
    Create connection**.
 2. Provider **GitHub** → nombre `github-devopskings` → **Connect to GitHub** → **Install a new app** →
    instalar la app *AWS Connector for GitHub* en la cuenta `cryptolucas`, solo para el repo
@@ -77,7 +77,7 @@ El repositorio es de `cryptolucas`, así que **Lucas** debe autorizar la conexi�
 5. **Deploy stage:** **Skip deploy stage**. No se configura CD en esta entrega.
 6. **Create pipeline**. Arranca solo con el último commit de `main`.
 
-El artefacto queda en el bucket que crea CodePipeline (`codepipeline-us-east-2-...`), carpeta
+El artefacto queda en el bucket que crea CodePipeline (`codepipeline-us-east-1-...`), carpeta
 `listanegra-ci/BuildArtif/`. Ese zip es el mismo bundle que se sube a Beanstalk.
 
 > Si el build falla en la fase **INSTALL** con un error de `runtime-versions`, la imagen no tiene
