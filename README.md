@@ -224,6 +224,20 @@ En producción el servidor es gunicorn (`Procfile`), no el servidor de desarroll
 El paso a paso completo (RDS, Elastic Beanstalk, security groups, health checks y las 4 estrategias
 de despliegue) está en [`docs/DESPLIEGUE_AWS.md`](docs/DESPLIEGUE_AWS.md).
 
+| Entrega | Guía |
+|---|---|
+| 1 – Despliegue manual en Elastic Beanstalk | [`docs/DESPLIEGUE_AWS.md`](docs/DESPLIEGUE_AWS.md) |
+| 2 – Integración continua (CodeBuild + CodePipeline) | [`docs/CI_PIPELINE.md`](docs/CI_PIPELINE.md) |
+| 3 – Entrega continua en AWS Fargate (CodeDeploy blue/green) | [`docs/CD_FARGATE.md`](docs/CD_FARGATE.md) |
+
+Para correr el contenedor en local:
+
+```powershell
+docker build -t listanegra .
+docker run -p 8000:8000 listanegra
+# http://localhost:8000/health
+```
+
 ---
 
 ## Postman
