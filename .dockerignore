@@ -1,0 +1,23 @@
+# Solo application.py, src/ y requirements.txt entran a la imagen.
+.git
+.github
+.venv
+venv
+env
+.env
+*.env
+**/__pycache__
+*.py[cod]
+.pytest_cache
+reports
+tests
+docs
+postman
+scripts
+evidencias
+build
+deploy
+.ebextensions
+*.db
+*.zip
+*.log
