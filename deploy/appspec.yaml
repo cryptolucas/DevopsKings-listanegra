@@ -1,0 +1,13 @@
+# AppSpec de AWS CodeDeploy para un servicio de Amazon ECS (Fargate) con
+# despliegue blue/green. CodePipeline reemplaza <TASK_DEFINITION> por la
+# revision de la definicion de tarea que registra en cada ejecucion.
+version: 0.0
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: <TASK_DEFINITION>
+        LoadBalancerInfo:
+          # Deben coincidir con el contenedor y el puerto de deploy/taskdef.json.
+          ContainerName: "listanegra"
+          ContainerPort: 8000

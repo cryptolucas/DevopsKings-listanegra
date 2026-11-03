@@ -1,0 +1,79 @@
+###############################################################################
+# AWS CodeBuild - CI + preparacion del despliegue continuo en AWS Fargate.
+#
+# 1. Ejecuta las pruebas unitarias. Si fallan, no se construye ni se publica
+#    ninguna imagen.
+# 2. Construye la imagen Docker y la publica en Amazon ECR con el hash del
+#    commit como etiqueta.
+# 3. Entrega a CodePipeline los tres archivos que usa la accion
+#    "Amazon ECS (Blue/Green)" de AWS CodeDeploy:
+#      imageDetail.json  la imagen recien publicada (<IMAGE1_NAME>)
+#      taskdef.json      la definicion de tarea de Fargate
+#      appspec.yaml      la especificacion del despliegue blue/green
+#
+# El proyecto de CodeBuild necesita:
+#   - Imagen aws/codebuild/amazonlinux-x86_64-standard:5.0 con computo EC2
+#     (el computo Lambda no permite construir imagenes Docker).
+#   - "Privileged" activado (Docker dentro del build).
+#   - Buildspec name: buildspec-cd.yml
+#   - Permisos de ECR en su rol (AmazonEC2ContainerRegistryPowerUser).
+#
+# buildspec.yml (Entrega 2) se conserva sin cambios para el pipeline de CI.
+###############################################################################
+version: 0.2
+
+env:
+  variables:
+    ECR_REPOSITORY: listanegra
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+    commands:
+      - pip install -r requirements-dev.txt
+
+  pre_build:
+    commands:
+      - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - REGISTRY=$ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - IMAGE_URI=$REGISTRY/$ECR_REPOSITORY
+      - IMAGE_TAG=$(echo "$CODEBUILD_RESOLVED_SOURCE_VERSION" | cut -c1-7)
+      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$REGISTRY"
+
+  build:
+    # Un comando que falla detiene la fase: si una prueba falla, no hay imagen.
+    commands:
+      - echo "Ejecutando pruebas unitarias"
+      - python -m pytest -v --junitxml=reports/junit.xml
+      - echo "Construyendo imagen $IMAGE_URI:$IMAGE_TAG"
+      - docker build -t "$IMAGE_URI:$IMAGE_TAG" -t "$IMAGE_URI:latest" .
+
+  post_build:
+    commands:
+      - |
+        if [ "$CODEBUILD_BUILD_SUCCEEDING" != "1" ]; then
+          echo "Pruebas o construccion fallidas: no se publica imagen ni se despliega."
+          exit 1
+        fi
+      - docker push "$IMAGE_URI:$IMAGE_TAG"
+      - docker push "$IMAGE_URI:latest"
+      - mkdir -p build
+      - printf '{"ImageURI":"%s"}' "$IMAGE_URI:$IMAGE_TAG" > build/imageDetail.json
+      - sed -e "s|<ACCOUNT_ID>|$ACCOUNT_ID|g" -e "s|<REGION>|$AWS_DEFAULT_REGION|g" deploy/taskdef.json > build/taskdef.json
+      - cp deploy/appspec.yaml build/appspec.yaml
+      - cat build/imageDetail.json
+
+reports:
+  pruebas-unitarias:
+    files:
+      - junit.xml
+    base-directory: reports
+    file-format: JUNITXML
+
+artifacts:
+  base-directory: build
+  files:
+    - imageDetail.json
+    - taskdef.json
+    - appspec.yaml

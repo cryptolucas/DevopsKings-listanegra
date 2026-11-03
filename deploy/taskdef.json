@@ -1,0 +1,53 @@
+{
+  "family": "listanegra",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "runtimePlatform": {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "listanegra",
+      "image": "<IMAGE1_NAME>",
+      "essential": true,
+      "portMappings": [
+        { "containerPort": 8000, "protocol": "tcp" }
+      ],
+      "environment": [
+        { "name": "APP_ENV", "value": "production" },
+        { "name": "DB_PORT", "value": "5432" },
+        { "name": "AUTO_CREATE_TABLES", "value": "true" }
+      ],
+      "secrets": [
+        { "name": "DB_HOST", "valueFrom": "arn:aws:ssm:<REGION>:<ACCOUNT_ID>:parameter/listanegra/DB_HOST" },
+        { "name": "DB_NAME", "valueFrom": "arn:aws:ssm:<REGION>:<ACCOUNT_ID>:parameter/listanegra/DB_NAME" },
+        { "name": "DB_USER", "valueFrom": "arn:aws:ssm:<REGION>:<ACCOUNT_ID>:parameter/listanegra/DB_USER" },
+        { "name": "DB_PASSWORD", "valueFrom": "arn:aws:ssm:<REGION>:<ACCOUNT_ID>:parameter/listanegra/DB_PASSWORD" },
+        { "name": "STATIC_TOKEN", "valueFrom": "arn:aws:ssm:<REGION>:<ACCOUNT_ID>:parameter/listanegra/STATIC_TOKEN" },
+        { "name": "JWT_SECRET_KEY", "valueFrom": "arn:aws:ssm:<REGION>:<ACCOUNT_ID>:parameter/listanegra/JWT_SECRET_KEY" }
+      ],
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)\" || exit 1"
+        ],
+        "interval": 15,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 20
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/listanegra",
+          "awslogs-region": "<REGION>",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}
