@@ -14,7 +14,7 @@
 #   cd DevopsKings-listanegra
 #   bash scripts/crear_servicio_ecs.sh
 #
-# Requisitos (docs/CD_FARGATE.md, pasos A1 a A8): imagen :manual en ECR,
+# Requisitos (docs/CD_FARGATE.md, pasos A1 a A9): imagen :manual en ECR,
 # parametros en Parameter Store, ecsTaskExecutionRole, log group, security
 # groups, target group azul, ALB con listener 80 y el cluster.
 #
@@ -58,16 +58,16 @@ IMAGE_URI="$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG"
 echo "    cuenta: $ACCOUNT_ID"
 
 aws ecr describe-images --repository-name "$ECR_REPOSITORY" --image-ids imageTag="$IMAGE_TAG" >/dev/null 2>&1 \
-  || fallar "no existe la imagen $IMAGE_URI. Haga el paso A7 (primera imagen)."
+  || fallar "no existe la imagen $IMAGE_URI. Haga el paso A8 (primera imagen)."
 echo "    imagen: $IMAGE_URI"
 
 CLUSTER_STATUS=$(aws ecs describe-clusters --clusters "$CLUSTER" --query 'clusters[0].status' --output text)
-[ "$CLUSTER_STATUS" = "ACTIVE" ] || fallar "no existe el cluster $CLUSTER. Haga el paso A8."
+[ "$CLUSTER_STATUS" = "ACTIVE" ] || fallar "no existe el cluster $CLUSTER. Haga el paso A9."
 echo "    cluster: $CLUSTER"
 
 ALB_ARN=$(aws elbv2 describe-load-balancers --names "$ALB_NAME" \
   --query 'LoadBalancers[0].LoadBalancerArn' --output text 2>/dev/null) \
-  || fallar "no existe el balanceador $ALB_NAME. Haga el paso A6."
+  || fallar "no existe el balanceador $ALB_NAME. Haga el paso A7."
 ALB_DNS=$(aws elbv2 describe-load-balancers --load-balancer-arns "$ALB_ARN" --query 'LoadBalancers[0].DNSName' --output text)
 VPC_ID=$(aws elbv2 describe-load-balancers --load-balancer-arns "$ALB_ARN" --query 'LoadBalancers[0].VpcId' --output text)
 # Las tareas van en las mismas subredes (publicas) que el balanceador.
@@ -81,7 +81,7 @@ TG_ARN=$(aws elbv2 describe-target-groups --names "$TG_BLUE" \
 TG_LBS=$(aws elbv2 describe-target-groups --target-group-arns "$TG_ARN" \
   --query 'TargetGroups[0].LoadBalancerArns' --output text)
 if [ -z "$TG_LBS" ] || [ "$TG_LBS" = "None" ]; then
-  fallar "$TG_BLUE no esta conectado al balanceador. El listener HTTP:80 de $ALB_NAME debe enviar a $TG_BLUE (paso A6)."
+  fallar "$TG_BLUE no esta conectado al balanceador. El listener HTTP:80 de $ALB_NAME debe enviar a $TG_BLUE (paso A7)."
 fi
 echo "    target group azul: $TG_BLUE"
 
@@ -179,4 +179,4 @@ echo "GET http://$ALB_DNS/health"
 curl -s "http://$ALB_DNS/health" || true
 echo
 echo
-echo "Servicio listo. Siguiente paso: crear la aplicacion y el deployment group de CodeDeploy (paso A10)."
+echo "Servicio listo. Siguiente paso: crear la aplicacion y el deployment group de CodeDeploy (paso A11)."
