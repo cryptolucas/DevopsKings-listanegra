@@ -39,6 +39,8 @@ phases:
       - REGISTRY=$ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
       - IMAGE_URI=$REGISTRY/$ECR_REPOSITORY
       - IMAGE_TAG=$(echo "$CODEBUILD_RESOLVED_SOURCE_VERSION" | cut -c1-7)
+      # Si CodePipeline no entrega el commit, la etiqueta no puede quedar vacia.
+      - IMAGE_TAG=${IMAGE_TAG:-build-$CODEBUILD_BUILD_NUMBER}
       - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$REGISTRY"
 
   build:
