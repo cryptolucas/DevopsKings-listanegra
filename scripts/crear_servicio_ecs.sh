@@ -36,7 +36,7 @@ ECR_REPOSITORY="${ECR_REPOSITORY:-listanegra}"
 IMAGE_TAG="${IMAGE_TAG:-manual}"
 ALB_NAME="${ALB_NAME:-alb-listanegra}"
 TG_BLUE="${TG_BLUE:-tg-listanegra-blue}"
-SG_TASKS="${SG_TASKS:-sg-listanegra-tasks}"
+SG_TASKS="${SG_TASKS:-listanegra-tasks}"
 DESIRED_COUNT="${DESIRED_COUNT:-1}"
 # Deben coincidir con deploy/taskdef.json y deploy/appspec.yaml.
 CONTAINER_NAME="listanegra"
@@ -88,8 +88,13 @@ echo "    target group azul: $TG_BLUE"
 SG_ID=$(aws ec2 describe-security-groups \
   --filters Name=group-name,Values="$SG_TASKS" Name=vpc-id,Values="$VPC_ID" \
   --query 'SecurityGroups[0].GroupId' --output text)
-[ -n "$SG_ID" ] && [ "$SG_ID" != "None" ] \
-  || fallar "no existe el security group $SG_TASKS en la VPC $VPC_ID. Haga el paso A5."
+if [ -z "$SG_ID" ] || [ "$SG_ID" = "None" ]; then
+  echo
+  echo "Security groups que si existen en la VPC $VPC_ID:"
+  aws ec2 describe-security-groups --filters Name=vpc-id,Values="$VPC_ID" \
+    --query 'SecurityGroups[].[GroupName,GroupId]' --output text | sed 's/^/    /'
+  fallar "no existe el security group $SG_TASKS en la VPC $VPC_ID. Haga el paso A5, o si lo creo con otro nombre ejecute: SG_TASKS=<nombre> bash scripts/crear_servicio_ecs.sh"
+fi
 echo "    security group de las tareas: $SG_TASKS ($SG_ID)"
 
 EXISTING=$(aws ecs describe-services --cluster "$CLUSTER" --services "$SERVICE" \

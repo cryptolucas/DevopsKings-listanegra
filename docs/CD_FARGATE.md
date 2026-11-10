@@ -91,7 +91,7 @@ Este push dispara el pipeline `listanegra-ci` de la Entrega 2 (solo corre las pr
 ### 0.3 Datos de la base de datos
 1. Abra **RDS → Databases** y seleccione la base de la Entrega 1 (`listanegra-db`).
 2. Pestaña **Connectivity & security**: anote el **Endpoint** y el **VPC security group**
-   (`sg-listanegra-rds`). Confirme que la VPC es la *default*.
+   (su nombre y su ID `sg-xxxxxxxx`). Confirme que la VPC es la *default*.
 3. Pestaña **Configuration**: anote el **Master username** y el **DB name** (`blacklistdb`).
 4. La contraseña maestra no se puede consultar: pídala a quien creó la base.
 
@@ -199,26 +199,29 @@ La tarea no puede crear el grupo por su cuenta: si no existe, la tarea no arranc
 ### A5. Security groups
 Abra **EC2 → Network & Security → Security Groups**.
 
+AWS no acepta nombres que empiecen por `sg-` (ese prefijo es solo para los IDs). Use exactamente
+`listanegra-alb` y `listanegra-tasks`: el script del paso A10 busca `listanegra-tasks` por nombre.
+
 **SG del balanceador:**
-1. **Create security group** → **Name:** `sg-listanegra-alb` → **Description:** `ALB listanegra` →
+1. **Create security group** → **Name:** `listanegra-alb` → **Description:** `ALB listanegra` →
    **VPC:** la *default*.
 2. **Inbound rules → Add rule** → **Type:** HTTP → **Source:** Anywhere-IPv4.
 3. Deje las reglas de salida como están → **Create security group**.
 
 **SG de las tareas:**
-1. **Create security group** → **Name:** `sg-listanegra-tasks` → **Description:** `Tareas Fargate
+1. **Create security group** → **Name:** `listanegra-tasks` → **Description:** `Tareas Fargate
    listanegra` → **VPC:** la *default*.
-2. **Add rule** → **Type:** Custom TCP → **Port range:** `8000` → **Source:** Custom → escriba `sg-` y
-   elija `sg-listanegra-alb`.
+2. **Add rule** → **Type:** Custom TCP → **Port range:** `8000` → **Source:** Custom → escriba
+   `listanegra` y elija `listanegra-alb`.
 3. **Create security group**.
 
 **Permitir que las tareas lleguen a la base:**
-1. Seleccione el SG de la RDS (`sg-listanegra-rds`) → pestaña **Inbound rules → Edit inbound rules**.
-2. **Add rule** → **Type:** PostgreSQL → **Source:** Custom → `sg-listanegra-tasks`.
+1. Seleccione el SG de la RDS (el que anotó en el paso 0.3) → pestaña **Inbound rules → Edit inbound rules**.
+2. **Add rule** → **Type:** PostgreSQL → **Source:** Custom → `listanegra-tasks`.
 3. **Save rules**. No borre las reglas que ya tenía.
 
-✅ `sg-listanegra-tasks` permite el puerto 8000 solo desde `sg-listanegra-alb`, y el SG de la RDS
-permite el 5432 desde `sg-listanegra-tasks`.
+✅ `listanegra-tasks` permite el puerto 8000 solo desde `listanegra-alb`, y el SG de la RDS
+permite el 5432 desde `listanegra-tasks`.
 
 📸 Las reglas de entrada de los tres security groups.
 
@@ -248,7 +251,7 @@ Repita estos pasos dos veces: la primera con el nombre `tg-listanegra-blue` y la
 3. **Network mapping → VPC:** la *default*. **Availability Zones:** marque **us-east-1a** y
    **us-east-1b** (se elige sola la subred por defecto de cada zona). El script del paso A10 pone las
    tareas en estas mismas subredes.
-4. **Security groups:** quite `default` y deje solo `sg-listanegra-alb`.
+4. **Security groups:** quite `default` y deje solo `listanegra-alb`.
 5. **Listeners and routing:** HTTP : 80 → **Default action:** *Forward to target groups* →
    `tg-listanegra-blue`.
 6. **Create load balancer**. Pasa de *Provisioning* a **Active** en 2 o 3 minutos.
@@ -628,8 +631,8 @@ mostrar el despliegue sin tiempos muertos.
 | ECS → tarea detenida (*Stopped reason*) | `ResourceInitializationError: unable to pull secrets` | Falta `listanegra-ssm` en `ecsTaskExecutionRole` o un parámetro tiene otro nombre (A2, A3) |
 | ECS → tarea detenida | `... log group does not exist` | Cree `/ecs/listanegra` (A4) |
 | ECS → tarea detenida | `CannotPullContainerError` | La imagen no existe en ECR o la tarea no tiene IP pública |
-| Target *unhealthy*, `/health` = 503 | `database: down` | Falta la regla 5432 desde `sg-listanegra-tasks` en el SG de la RDS, o los `DB_*` están mal. Vea el log de la tarea en CloudWatch |
-| Target *unhealthy*, *Request timed out* | El ALB no llega al contenedor | `sg-listanegra-tasks` debe permitir 8000 desde `sg-listanegra-alb` |
+| Target *unhealthy*, `/health` = 503 | `database: down` | Falta la regla 5432 desde `listanegra-tasks` en el SG de la RDS, o los `DB_*` están mal. Vea el log de la tarea en CloudWatch |
+| Target *unhealthy*, *Request timed out* | El ALB no llega al contenedor | `listanegra-tasks` debe permitir 8000 desde `listanegra-alb` |
 | CodeDeploy, al crear el deployment group | El servicio no aparece o da error de controlador | El servicio se creó desde la consola: bórrelo (*Force delete*) y corra el script de A10 |
 | CodePipeline, Deploy | `not authorized to perform: iam:PassRole` | Rol del pipeline → política inline con `iam:PassRole` sobre `arn:aws:iam::*:role/ecsTaskExecutionRole` |
 | CodePipeline, Deploy | Queda *In progress* casi una hora | *Original revision termination* quedó en 1 hora: edite el deployment group (A11) |
