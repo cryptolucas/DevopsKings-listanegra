@@ -10,4 +10,4 @@ Resources:
         LoadBalancerInfo:
           # Deben coincidir con el contenedor y el puerto de deploy/taskdef.json.
           ContainerName: "listanegra"
-          ContainerPort: 8000
+          ContainerPort: 9000
