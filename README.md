@@ -229,6 +229,7 @@ de despliegue) está en [`docs/DESPLIEGUE_AWS.md`](docs/DESPLIEGUE_AWS.md).
 | 1 – Despliegue manual en Elastic Beanstalk | [`docs/DESPLIEGUE_AWS.md`](docs/DESPLIEGUE_AWS.md) |
 | 2 – Integración continua (CodeBuild + CodePipeline) | [`docs/CI_PIPELINE.md`](docs/CI_PIPELINE.md) |
 | 3 – Entrega continua en AWS Fargate (CodeDeploy blue/green) | [`docs/CD_FARGATE.md`](docs/CD_FARGATE.md) |
+| 4 – Monitoreo continuo con New Relic y pruebas de estrés | [`docs/MONITOREO_NEWRELIC.md`](docs/MONITOREO_NEWRELIC.md) |
 
 Para correr el contenedor en local:
 
