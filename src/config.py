@@ -108,6 +108,10 @@ class Config:
     # migraciones); se puede apagar con AUTO_CREATE_TABLES=false.
     AUTO_CREATE_TABLES = os.environ.get("AUTO_CREATE_TABLES", "true").lower() == "true"
 
+    # Endpoints /debug/* para provocar errores y lentitud en el monitoreo con
+    # New Relic (Entrega 4). Apagados salvo que se pida explicitamente.
+    ENABLE_FAULT_INJECTION = os.environ.get("ENABLE_FAULT_INJECTION", "false").lower() == "true"
+
 
 class DevelopmentConfig(Config):
     DEBUG = True
