@@ -26,5 +26,7 @@ USER appuser
 EXPOSE 8000
 
 # Mismo servidor que en Elastic Beanstalk (Procfile), con menos workers porque
-# cada tarea de Fargate tiene 0.5 vCPU.
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "4", "--timeout", "60", "--access-logfile", "-", "--error-logfile", "-", "application:application"]
+# cada tarea de Fargate tiene 0.5 vCPU. newrelic-admin carga el agente de New
+# Relic antes que la app; sin NEW_RELIC_LICENSE_KEY la app corre igual, solo
+# que sin enviar datos.
+CMD ["newrelic-admin", "run-program", "gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "4", "--timeout", "60", "--access-logfile", "-", "--error-logfile", "-", "application:application"]

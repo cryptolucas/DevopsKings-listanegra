@@ -20,7 +20,13 @@
       "environment": [
         { "name": "APP_ENV", "value": "production" },
         { "name": "DB_PORT", "value": "5432" },
-        { "name": "AUTO_CREATE_TABLES", "value": "true" }
+        { "name": "AUTO_CREATE_TABLES", "value": "true" },
+        { "name": "ENABLE_FAULT_INJECTION", "value": "true" },
+        { "name": "NEW_RELIC_APP_NAME", "value": "listanegra-fargate" },
+        { "name": "NEW_RELIC_LOG", "value": "stdout" },
+        { "name": "NEW_RELIC_LOG_LEVEL", "value": "info" },
+        { "name": "NEW_RELIC_DISTRIBUTED_TRACING_ENABLED", "value": "true" },
+        { "name": "NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED", "value": "true" }
       ],
       "secrets": [
         { "name": "DB_HOST", "valueFrom": "arn:aws:ssm:<REGION>:<ACCOUNT_ID>:parameter/listanegra/DB_HOST" },
@@ -28,7 +34,8 @@
         { "name": "DB_USER", "valueFrom": "arn:aws:ssm:<REGION>:<ACCOUNT_ID>:parameter/listanegra/DB_USER" },
         { "name": "DB_PASSWORD", "valueFrom": "arn:aws:ssm:<REGION>:<ACCOUNT_ID>:parameter/listanegra/DB_PASSWORD" },
         { "name": "STATIC_TOKEN", "valueFrom": "arn:aws:ssm:<REGION>:<ACCOUNT_ID>:parameter/listanegra/STATIC_TOKEN" },
-        { "name": "JWT_SECRET_KEY", "valueFrom": "arn:aws:ssm:<REGION>:<ACCOUNT_ID>:parameter/listanegra/JWT_SECRET_KEY" }
+        { "name": "JWT_SECRET_KEY", "valueFrom": "arn:aws:ssm:<REGION>:<ACCOUNT_ID>:parameter/listanegra/JWT_SECRET_KEY" },
+        { "name": "NEW_RELIC_LICENSE_KEY", "valueFrom": "arn:aws:ssm:<REGION>:<ACCOUNT_ID>:parameter/listanegra/NEW_RELIC_LICENSE_KEY" }
       ],
       "healthCheck": {
         "command": [

@@ -15,3 +15,6 @@ psycopg2-binary==2.9.9
 python-dotenv==1.0.0
 gunicorn==21.2.0
 email-validator==2.1.0
+# Agente de New Relic (Entrega 4). Solo existe para Linux/macOS: en Windows se omite
+# y la app funciona igual sin monitoreo (src/monitoring.py).
+newrelic==14.3.0; sys_platform != "win32"

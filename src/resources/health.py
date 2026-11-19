@@ -12,6 +12,7 @@ from flask_restful import Resource
 from sqlalchemy import text
 
 from src.extensions import db
+from src.monitoring import ignore_transaction
 from src.version import APP_VERSION
 
 # En EC2 el hostname es ip-172-31-x-x: identifica que instancia respondio, lo
@@ -41,6 +42,9 @@ class HealthResource(Resource):
     """``/health`` - health check para el load balancer de Elastic Beanstalk."""
 
     def get(self):
+        # El balanceador consulta /health cada pocos segundos: si se midiera,
+        # inflaria el throughput y distorsionaria el Apdex del trafico real.
+        ignore_transaction()
         database = "up"
         status_code = 200
         try:

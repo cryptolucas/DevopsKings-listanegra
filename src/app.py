@@ -12,6 +12,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from src.config import get_config
 from src.extensions import db, jwt, ma
+from src.monitoring import notice_error
 
 
 def _configure_logging(app: Flask) -> None:
@@ -35,6 +36,9 @@ def _register_resources(app: Flask) -> None:
     # Import tardio: evita import circular con src.extensions.
     from src.resources import (
         BlacklistEmailResource,
+        DebugErrorResource,
+        DebugSlowDbResource,
+        DebugSlowResource,
         BlacklistResource,
         HealthResource,
         RootResource,
@@ -56,6 +60,11 @@ def _register_resources(app: Flask) -> None:
     api.add_resource(RootResource, "/", endpoint="root")
     api.add_resource(TokenResource, "/auth/token", endpoint="auth_token")
 
+    # --- Inyeccion de fallas para el monitoreo (apagada por defecto) --------
+    api.add_resource(DebugErrorResource, "/debug/error", endpoint="debug_error")
+    api.add_resource(DebugSlowResource, "/debug/slow", endpoint="debug_slow")
+    api.add_resource(DebugSlowDbResource, "/debug/slow-db", endpoint="debug_slow_db")
+
     app.extensions["restful_api"] = api
 
 
@@ -75,8 +84,11 @@ def _register_error_handlers(app: Flask) -> None:
         return response
 
     @app.errorhandler(Exception)
-    def handle_unexpected_error(error: Exception):  # pragma: no cover
+    def handle_unexpected_error(error: Exception):
         app.logger.exception("Error no controlado: %s", error)
+        # El handler convierte la excepcion en una respuesta: sin esto New
+        # Relic no la veria como error.
+        notice_error(error)
         response = jsonify(
             {
                 "message": "Error interno del servidor.",
